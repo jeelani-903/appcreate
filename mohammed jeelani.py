@@ -1,118 +1,85 @@
-import PySimpleGUI as sg
-
-sg.theme("darkgreen1")
-
-
-def add_task(values):
-    task = values['taskname']
-    todolist.append(task)
-    window.FindElement('taskname').Update(value="")
-    window.FindElement('todolist').Update(values=todolist)
-    window.FindElement('add_save').Update('Add')
-
-def edit_tasks(values):
-    edit_val = values['todolist'][0]
-    window.FindElement('taskname').Update(value=edit_val)
-    todolist.remove(edit_val)
-    window.FindElement('add_save').Update('Save')
-
-def edit_fav_tasks(values):
-    edit_fav_val = values['todolist1'][0]
-    window.FindElement('taskname').Update(value=edit_fav_val)
-    todolist1.remove(edit_fav_val)
-    window.FindElement('add_save').Update('save')
-    
-def delete_tasks(values):
-    delete_val = values['todolist'][0]
-    todolist.remove(delete_val)
-    window.FindElement('todolist').Update(values=todolist)
-
-def delete_fav_tasks(values):
-    delete_fav_val = values['todolist1'][0]
-    todolist1.remove(delete_fav_val)
-    window.FindElement('todolist1').Update(values=todolist1)
-    
-
-def favourite_tasks(values):
-     fav_task = values['todolist'][0]
-     todolist1.append(fav_task)
-     window.FindElement('todolist').Update(values=todolist)
-     window.FindElement('todolist1').Update(values=todolist1)
+import pgzrun
+from random import randint
+WIDTH = 1000
+HEIGHT = 550
+player = Actor("monkey")
+player.bottom = HEIGHT
+player.x = WIDTH // 2
+banana_y_speed = 0
+missed = False
+score=0
+bananas = []
+ 
+def draw():
+  screen.clear()
+  screen.blit("jungle.jpg" , (0,0))
+  player.draw()
+  draw_bananas()
+  display_score()
+  if missed:
+    display_text()
+ 
+def update():
+  if not missed:
+    move_player()
+    move_bananas()
+    check_collision()
+    check_miss()
+   
      
-def read_file():
-    tasks = []
-    with open("output.txt", "r") as fp:
-        line = fp.readline()
-        while line != '':
-            tasks.append(line.strip("\n"))
-            line = fp.readline()
-    return tasks
-
-def show_tasks():
-    fav_tasks = []
-    with open("input.txt", "r") as fp:
-        line = fp.readline()
-        while line != '':
-            fav_tasks.append(line.strip("\n"))
-            line = fp.readline()
-    return fav_tasks
-
-def save_tasks():
-    with open("output.txt", "w") as fw:
-        for x in todolist:
-            fw.write(x+"\n")
-    todolist.clear()
-
-def save_fav_tasks():
-    with open("input.txt", "w") as f:
-        for i in todolist1:
-            f.write(i+"\n")
-    todolist1.clear()
-    
-def sort_fav_tasks():
-        todolist1.sort()
-        window.FindElement('todolist1').Update(todolist1)
-
-    
-todolist = read_file()
-todolist1 = show_tasks()
-
-layout = [
-    [sg.Text("Enter the task", font=("Arial", 14)), sg.InputText("", font=("Arial", 14), size=(20,1), key="taskname"),
-     sg.Button("Add", font=("Arial", 14), key="add_save"),
-    sg.Text("YOUR FAVOURTES", font=("Arial", 14), size=(100,1), justification = 'r')],
-    [sg.Listbox(values=[todolist][0], size=(40, 10), font=("Arial", 14), key='todolist'), sg.Button("Edit", font=("Arial", 14)),
-     sg.Button("Delete", font=("Arial", 14)),sg.Button("your favourites", font=("Arial", 14)),sg.Button("save task"),
-    sg.Button("save your favourite task"),sg.Button("sort your favourite tasks"),
-      sg.Listbox(values=[todolist1][0], size=(40,10), font=("Arial", 14), key=('todolist1'))],
-     
-]
-
-window = sg.Window("Week1", layout)
-while True:
-    event, values = window.Read()
-    if event == 'Edit':
-         if values['todolist']:
-             edit_tasks(values)
-         if values['todolist1']:
-             edit_fav_tasks(values)
-    elif event == 'Delete':
-         if values['todolist']:
-            delete_tasks(values)
-         if values['todolist1']:
-            delete_fav_tasks(values)
-    elif event == 'add_save':
-        add_task(values)
-    elif event == 'your favourites':
-        favourite_tasks(values)
-    elif event == 'save task':
-        save_tasks()
-    elif event == 'save your favourite task':
-        save_fav_tasks()
-    elif event == 'sort your favourite tasks':
-        sort_fav_tasks()
-    else:
-        break
-      
-  
-window.Close()
+def move_bananas():
+  global banana_y_speed
+  for banana in bananas:
+        banana.y += 5
+ 
+def move_player():
+   if keyboard.left:
+     player.x -=10
+   elif keyboard.right:
+     player.x +=10
+   if bananas[-1].y > 300:
+          create_new_banana()
+   if player.left < 0:
+        player.left = 0
+   elif player.right > WIDTH:
+        player.right = WIDTH
+ 
+ 
+def create_new_banana():
+   banana = Actor("banana.png")
+   banana.x = randint(100, WIDTH-100)
+   banana.y += 10
+   bananas.append(banana)
+ 
+ 
+def draw_bananas():
+   for banana in bananas:
+      banana.draw()
+ 
+def check_collision():
+   global score
+   for banana in bananas:
+        if banana.colliderect(player):
+            score += 5
+            bananas.remove(banana)
+            if len(bananas) == 0:
+                  create_new_banana()
+ 
+def check_miss():
+    global missed
+    for banana in bananas:
+         if banana.bottom > HEIGHT+abs(banana_y_speed):
+            print(banana.bottom)
+            print(HEIGHT)
+            print(HEIGHT + banana_y_speed)
+            missed=True
+            display_text()
+ 
+def display_text():
+    screen.draw.text(("OOPS MONKEY LEFT THE BANANA !!!"),((WIDTH//2)-300,HEIGHT//2),fontsize= 50,color="white")
+ 
+def display_score():
+    screen.draw.text("SCORE:" +str(score),(800,10),fontsize=50,color="blue")
+ 
+create_new_banana() 
+pgzrun.go()
